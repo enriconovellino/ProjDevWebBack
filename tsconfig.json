@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    /* Configurações de Módulo (ESM) */
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+
+    /* Configurações do Projeto */
+    "outDir": "./dist",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* Verificações Estritas */
+    "strict": true,
+    "skipLibCheck": true,
+
+    /* Alias */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": [
+    "server.ts",
+    "controllers/**/*.ts",
+    "routes/**/*.ts",
+    "middlewares/**/*.ts",
+    "utils/**/*.ts",
+    "prisma/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
+}
