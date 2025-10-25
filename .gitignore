@@ -1,20 +1,26 @@
-# Dependencies
+# Dependências
 /node_modules
+/dist
+/build
 
-# Environment variables
+# Variáveis de ambiente 
 .env
+.env.local
 .env.test
+.env.*.local
+
+# Banco de dados local
+*.db
+*.db-journal
+dev.db
+dev.db-journal
+
+# Prisma
+prisma/*.db
+prisma/*.db-journal
 
 # TypeScript
-/dist
 *.tsbuildinfo
-
-# Logs
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
 # IDE / OS
 .vscode/
@@ -23,3 +29,10 @@ yarn-error.log*
 *.swo
 *~
 .DS_Store
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

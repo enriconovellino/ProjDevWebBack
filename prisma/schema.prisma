@@ -1,0 +1,170 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------
+// ENUMS - Listas de valores permitidos
+// ----------------------------------------------
+
+enum Perfil {
+  ADMIN
+  MEDICO
+  PACIENTE
+}
+
+enum StatusSlot {
+  DISPONIVEL
+  OCUPADO
+  BLOQUEADO
+}
+
+enum StatusConsulta {
+  AGENDADA
+  REALIZADA
+  CANCELADA
+}
+
+// ----------------------------------------------
+// MODELS - Nossas tabelas
+// ----------------------------------------------
+
+// Model Usuário
+model Usuario {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  senha_hash  String
+  nome        String
+  cpf         String   @unique
+  perfil      Perfil   @default(PACIENTE)
+  ativo       Boolean  @default(true)
+  criado_em   DateTime @default(now())
+  atualizado_em DateTime @updatedAt
+
+  // Relações 1:1 (Um usuário pode ser OU um médico OU um paciente)
+  medico   Medico?
+  paciente Paciente?
+
+  @@map("usuarios") // Mapeia para o nome da tabela "usuarios"
+}
+
+// Model Especialidade (Conforme tabela 'especialidades')
+model Especialidade {
+  id    Int    @id @default(autoincrement())
+  nome  String @unique
+  codigo String @unique
+
+  // Relação N:N com Medico
+  medicos MedicoEspecialidade[]
+
+  @@map("especialidades")
+}
+
+// Model Medico
+model Medico {
+  id              Int    @id @default(autoincrement()) // 
+  nome            String //  (O diagrama chama de 'medicos', mas 'nome' é mais claro)
+  telefone        String 
+  
+  //  O campo VARCHAR(45) é o CRM
+  crm             String @unique 
+  
+  // Duração da consulta em minutos
+  duracao_minutos Int    @default(30) 
+
+  // Relação 1:1 com Usuario
+  usuario_id Int     @unique
+  usuario    Usuario @relation(fields: [usuario_id], references: [id])
+
+  // Relação N:N com Especialidade
+  especialidades MedicoEspecialidade[]
+
+  // Relação 1:N com AgendaSlot
+  agenda_slots AgendaSlot[]
+  
+  // Relação 1:N com Consulta
+  consultas Consulta[]
+
+  @@map("medicos")
+}
+
+// Model Paciente
+model Paciente {
+  id                Int       @id @default(autoincrement()) 
+  data_nascimento   DateTime
+  telefone          String
+
+  // Relação 1:1 com Usuario 
+  usuario_id Int     @unique
+  usuario    Usuario @relation(fields: [usuario_id], references: [id])
+
+  // Relação 1:N com Consulta
+  consultas Consulta[]
+
+  @@map("pacientes")
+}
+
+// Tabela PIVÔ (Join Table) para Relação N:N Medico <-> Especialidade
+model MedicoEspecialidade {
+  // Chave estrangeira para Medico
+  medico_id Int
+  medico    Medico @relation(fields: [medico_id], references: [id])
+
+  // Chave estrangeira para Especialidade 
+  especialidade_id Int
+  especialidade    Especialidade @relation(fields: [especialidade_id], references: [id])
+
+  // Chave primária composta (garante que a dupla médico/especialidade seja única)
+  @@id([medico_id, especialidade_id])
+  @@map("medicos_has_especialidade")
+}
+
+// Model AgendaSlot (Conforme tabela 'agenda_sl...')
+model AgendaSlot {
+  id      Int      @id @default(autoincrement()) 
+  inicio  DateTime 
+  fim     DateTime 
+  status  StatusSlot @default(DISPONIVEL)
+
+  // Relação N:1 com Medico
+  medico_id Int
+  medico    Medico @relation(fields: [medico_id], references: [id])
+
+  // Relação 1:1 com Consulta (um slot pode ter 0 ou 1 consulta)
+  consulta Consulta?
+
+  // Garante que um médico não tenha slots sobrepostos
+  @@unique([medico_id, inicio])
+  @@map("agenda_slots")
+}
+
+// Model Consulta (Conforme tabela 'consultas')
+model Consulta {
+  id      Int      @id @default(autoincrement())
+  status  StatusConsulta @default(AGENDADA) 
+  criado_em DateTime @default(now()) 
+
+  // Relação N:1 com Paciente 
+  paciente_id Int
+  paciente    Paciente @relation(fields: [paciente_id], references: [id])
+
+  // Relação N:1 com Medico
+  medico_id Int
+  medico    Medico @relation(fields: [medico_id], references: [id])
+
+  // Relação 1:1 com AgendaSlot 
+  agenda_slot_id Int      @unique
+  agenda_slot    AgendaSlot @relation(fields: [agenda_slot_id], references: [id])
+
+  @@map("consultas")
+}
