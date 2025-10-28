@@ -4,6 +4,11 @@ import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 
+// --- NOVAS IMPORTAÇÕES ---
+import mainRouter from './routes/index.js'; // Nosso roteador principal
+import { errorHandlerMiddleware } from './middlewares/errorHandler.middleware.js'; // Nosso Error Handler
+import logger from './utils/logger.util.js'; // Nosso Logger
+
 // Configuração do Rate Limiter
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
@@ -34,7 +39,16 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
+// --- REGISTRAR ROTAS PRINCIPAIS ---
+// Todas as nossas rotas da API começarão com /api
+app.use('/api', mainRouter);
+
+// --- REGISTRAR ERROR HANDLER (DEVE SER O ÚLTIMO) ---
+// Middleware de tratamento de erros global
+app.use(errorHandlerMiddleware);
+
 // Inicia o servidor
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando na porta http://localhost:${PORT}`);
+  // Substituímos console.log pelo logger
+  logger.info(`🚀 Servidor rodando na porta http://localhost:${PORT}`);
 });

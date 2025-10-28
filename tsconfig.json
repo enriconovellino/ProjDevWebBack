@@ -30,7 +30,8 @@
     "middlewares/**/*.ts",
     "utils/**/*.ts",
     "prisma/**/*.ts",
-    "types/**/*.ts"
+    "types/**/*.ts",
+    "validations/**/*.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }
