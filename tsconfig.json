@@ -14,6 +14,9 @@
     "strict": true,
     "skipLibCheck": true,
 
+    /* Tipos Customizados */
+    "typeRoots": ["./node_modules/@types", "./types"],
+
     /* Alias */
     "baseUrl": ".",
     "paths": {
@@ -26,7 +29,8 @@
     "routes/**/*.ts",
     "middlewares/**/*.ts",
     "utils/**/*.ts",
-    "prisma/**/*.ts"
+    "prisma/**/*.ts",
+    "types/**/*.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }
