@@ -1,12 +1,19 @@
 // Conteúdo para: routes/auth.route.ts
 
 import { Router } from 'express';
-import { login, getProfile } from '../controllers/auth.controller.js';
+import { login, getProfile, register } from '../controllers/auth.controller.js';
 import { validationMiddleware } from '../middlewares/validation.middleware.js';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
-import { loginSchema } from '../validations/auth.validation.js';
+import { loginSchema, registerSchema } from '../validations/auth.validation.js';
 
 const router = Router();
+
+/**
+ * @route POST /api/auth/register
+ * @desc Registra um novo paciente.
+ * @access Pública
+ */
+router.post('/register', validationMiddleware(registerSchema.shape.body), register);
 
 /**
  * @route POST /api/auth/login

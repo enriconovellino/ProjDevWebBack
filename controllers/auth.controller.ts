@@ -91,3 +91,63 @@ export const getProfile = async (req: Request, res: Response, next: NextFunction
     next(error); // Passa o erro para o errorHandlerMiddleware
   }
 };
+
+/**
+ * Controller para registrar um novo Paciente (POST /register)
+ * Rota pública (RF12).
+ */
+export const register = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email, senha, nome, cpf, telefone, data_nascimento } = req.body;
+
+    // 1. Hash da senha
+    const salt = await bcrypt.genSalt(10);
+    const senha_hash = await bcrypt.hash(senha, salt);
+
+    // 2. Usar transação para criar Usuário e Paciente
+    const novoPaciente = await prisma.$transaction(async (tx) => {
+      const usuario = await tx.usuario.create({
+        data: {
+          email,
+          senha_hash,
+          nome,
+          cpf,
+          perfil: 'PACIENTE', // Define o perfil
+          ativo: true,
+        },
+      });
+
+      const paciente = await tx.paciente.create({
+        data: {
+          telefone,
+          data_nascimento: new Date(data_nascimento),
+          usuario_id: usuario.id, // Link 1:1
+        },
+      });
+
+      return { ...paciente, usuario };
+    });
+
+    // 3. Remover a senha antes de retornar
+    const { usuario: { senha_hash: _, ...usuarioSemSenha }, ...paciente } = novoPaciente;
+
+    logger.info(`Novo paciente registrado: ${email}`);
+    
+    // 4. (Opcional) Logar o usuário automaticamente após o registro
+    const payload: JwtPayload = {
+      id: usuarioSemSenha.id,
+      email: usuarioSemSenha.email,
+      perfil: usuarioSemSenha.perfil,
+    };
+    const token = generateToken(payload);
+
+    return res.status(201).json({
+      message: 'Paciente registrado com sucesso!',
+      usuario: { ...paciente, usuario: usuarioSemSenha },
+      token: token,
+    });
+
+  } catch (error) {
+    next(error); // Passa para o errorHandler (que tratará P2002 - email/cpf duplicado)
+  }
+};
