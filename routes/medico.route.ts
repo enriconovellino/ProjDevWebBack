@@ -2,11 +2,22 @@
 
 import { Router } from 'express';
 import { Perfil } from '@prisma/client';
-import { createMedico, listMedicos, getMedicoById, updateMedico, deleteMedico } from '../controllers/medico.controller.js';
+// --- Importar novas funções ---
+import {
+  createMedico,
+  listMedicos,
+  getMedicoById,
+  updateMedico,
+  deleteMedico,
+  addEspecialidadeToMedico,
+  removeEspecialidadeFromMedico
+} from '../controllers/medico.controller.js';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 import { authorizationMiddleware } from '../middlewares/authorization.middleware.js';
 import { validationMiddleware } from '../middlewares/validation.middleware.js';
+// --- Importar novo schema ---
 import { createMedicoSchema, updateMedicoSchema } from '../validations/medico.validation.js';
+import { linkEspecialidadeSchema } from '../validations/especialidade.validation.js';
 
 const router = Router();
 const adminOnly = authorizationMiddleware([Perfil.ADMIN]); // Middleware de Admin
@@ -57,5 +68,32 @@ router.put(
  * @access Privada (Admin) 
  */
 router.delete('/:id', authMiddleware, adminOnly, deleteMedico);
+
+// --- NOVAS ROTAS (N:N Especialidades) ---
+
+/**
+ * @route POST /api/medicos/:id/especialidades
+ * @desc Vincula uma especialidade a um médico.
+ * @access Privada (Admin)
+ */
+router.post(
+  '/:id/especialidades',
+  authMiddleware,
+  adminOnly,
+  validationMiddleware(linkEspecialidadeSchema.shape.body),
+  addEspecialidadeToMedico
+);
+
+/**
+ * @route DELETE /api/medicos/:id/especialidades/:especialidadeId
+ * @desc Desvincula uma especialidade de um médico.
+ * @access Privada (Admin)
+ */
+router.delete(
+  '/:id/especialidades/:especialidadeId',
+  authMiddleware,
+  adminOnly,
+  removeEspecialidadeFromMedico
+);
 
 export default router;

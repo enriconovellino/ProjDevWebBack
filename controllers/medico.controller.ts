@@ -226,3 +226,73 @@ export const deleteMedico = async (req: Request, res: Response, next: NextFuncti
     next(error);
   }
 };
+
+/**
+ * Controller para VINCULAR uma Especialidade a um Médico (POST /medicos/:id/especialidades)
+ * Restrito ao Admin.
+ */
+export const addEspecialidadeToMedico = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const medicoId = parseInt(id, 10);
+    const { especialidade_id } = req.body;
+
+    // 1. Verifica se o médico existe
+    const medico = await prisma.medico.findUnique({ where: { id: medicoId } });
+    if (!medico) {
+      return res.status(404).json({ message: 'Médico não encontrado' });
+    }
+
+    // 2. Verifica se a especialidade existe e está ativa
+    const especialidade = await prisma.especialidade.findUnique({
+      where: { id: especialidade_id, ativo: true },
+    });
+    if (!especialidade) {
+      return res.status(404).json({ message: 'Especialidade não encontrada ou inativa' });
+    }
+
+    // 3. Cria a vinculação na tabela N:N
+    const vinculo = await prisma.medicoEspecialidade.create({
+      data: {
+        medico_id: medicoId,
+        especialidade_id: especialidade_id,
+      },
+    });
+
+    logger.info(`Admin vinculou especialidade ${especialidade.nome} ao médico ID ${medicoId}`);
+    return res.status(201).json(vinculo);
+
+  } catch (error) {
+    // errorHandler tratará P2002 (vinculação já existe)
+    next(error);
+  }
+};
+
+/**
+ * Controller para DESVINCULAR uma Especialidade de um Médico (DELETE /medicos/:id/especialidades/:especialidadeId)
+ * Restrito ao Admin.
+ */
+export const removeEspecialidadeFromMedico = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id, especialidadeId } = req.params;
+    const medicoId = parseInt(id, 10);
+    const especialidade_id = parseInt(especialidadeId, 10);
+
+    // 1. Deleta o vínculo usando a chave composta (@@id)
+    await prisma.medicoEspecialidade.delete({
+      where: {
+        medico_id_especialidade_id: {
+          medico_id: medicoId,
+          especialidade_id: especialidade_id,
+        },
+      },
+    });
+
+    logger.info(`Admin desvinculou especialidade ID ${especialidade_id} do médico ID ${medicoId}`);
+    return res.status(204).send(); // 204 No Content
+
+  } catch (error) {
+    // errorHandler tratará P2025 (vínculo não encontrado)
+    next(error);
+  }
+};

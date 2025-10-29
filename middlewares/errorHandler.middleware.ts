@@ -28,10 +28,11 @@ export const errorHandlerMiddleware = (
   // Erros conhecidos do Prisma (ex: violação de constraint unique)
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     if (err.code === 'P2002') { // Unique constraint failed
-      const target = err.meta?.target as string[];
+      const target = err.meta?.target;
+      const campo = Array.isArray(target) ? target.join(', ') : (typeof target === 'string' ? target : 'desconhecido');
       return res.status(409).json({ // 409 Conflict
         message: 'Conflito de dados. Já existe um registro com este valor.',
-        campo: target ? target.join(', ') : 'desconhecido',
+        campo: campo,
       });
     }
   }

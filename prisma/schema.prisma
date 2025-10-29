@@ -60,9 +60,10 @@ model Usuario {
 
 // Model Especialidade (Conforme tabela 'especialidades')
 model Especialidade {
-  id    Int    @id @default(autoincrement())
-  nome  String @unique
-  codigo String @unique
+  id     Int     @id @default(autoincrement())
+  nome   String  @unique
+  codigo String  @unique
+  ativo  Boolean @default(true) // <-- CAMPO ADICIONADO
 
   // Relação N:N com Medico
   medicos MedicoEspecialidade[]
