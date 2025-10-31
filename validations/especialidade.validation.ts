@@ -1,6 +1,7 @@
 // Conteúdo para: validations/especialidade.validation.ts
 
 import { z } from 'zod';
+import { paginationSchema } from './pagination.validation.js'; // Importa
 
 export const createEspecialidadeSchema = z.object({
   body: z.object({
@@ -28,4 +29,12 @@ export const linkEspecialidadeSchema = z.object({
       .int()
       .positive('ID inválido'),
   }),
+});
+
+// Schema para a QUERY de 'listar especialidades'
+export const listEspecialidadesSchema = z.object({
+  query: paginationSchema.merge(z.object({
+    // Adicionar filtro por 'ativo' (embora o controller já force 'true')
+    ativo: z.string().optional().transform(val => val === 'true'),
+  })),
 });

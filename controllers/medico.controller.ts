@@ -64,36 +64,62 @@ export const createMedico = async (req: Request, res: Response, next: NextFuncti
  */
 export const listMedicos = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const medicos = await prisma.medico.findMany({
-      where: {
-        // Retorna apenas médicos cujo usuário está ATIVO
-        usuario: {
-          ativo: true,
-        },
-      },
-      include: {
-        // Inclui os dados do usuário (para nome, email)
-        usuario: {
-          select: {
-            id: true,
-            nome: true,
-            email: true,
-            ativo: true
-          }
-        },
-        // Inclui as especialidades (Fase 9, mas já preparamos)
-        especialidades: {
-          include: {
-            especialidade: true
-          }
-        }
-      },
-      orderBy: {
-        nome: 'asc' // Ordena por nome
-      }
-    });
+    const { page, limit } = req.query;
+    
+    // Calcula o skip (quantos registros pular)
+    // Nota: page e limit já foram validados e transformados para number pelo Zod
+    const skip = ((page as unknown as number) - 1) * (limit as unknown as number);
+    const take = limit as unknown as number;
 
-    return res.status(200).json(medicos);
+    const whereCondition = {
+      // Retorna apenas médicos cujo usuário está ATIVO
+      usuario: {
+        ativo: true,
+      },
+    };
+
+    // Busca paralela: total de registros e dados da página
+    const [totalItems, medicos] = await Promise.all([
+      prisma.medico.count({ where: whereCondition }),
+      prisma.medico.findMany({
+        where: whereCondition,
+        include: {
+          // Inclui os dados do usuário (para nome, email)
+          usuario: {
+            select: {
+              id: true,
+              nome: true,
+              email: true,
+              ativo: true
+            }
+          },
+          // Inclui as especialidades (Fase 9, mas já preparamos)
+          especialidades: {
+            include: {
+              especialidade: true
+            }
+          }
+        },
+        orderBy: {
+          nome: 'asc' // Ordena por nome
+        },
+        skip,
+        take,
+      }),
+    ]);
+
+    // Calcula metadados de paginação
+    const totalPages = Math.ceil(totalItems / take);
+
+    return res.status(200).json({
+      data: medicos,
+      metadata: {
+        totalItems,
+        totalPages,
+        currentPage: page,
+        itemsPerPage: take,
+      },
+    });
   } catch (error) {
     next(error);
   }

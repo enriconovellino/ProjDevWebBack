@@ -1,6 +1,7 @@
 // Conteúdo para: validations/medico.validation.ts
 
 import { z } from 'zod';
+import { paginationSchema } from './pagination.validation.js'; // Importa o schema de paginação
 
 // Schema para o corpo (body) da requisição de CRIAÇÃO de médico
 export const createMedicoSchema = z.object({
@@ -47,4 +48,13 @@ export const updateMedicoSchema = z.object({
     duracao_minutos: z.number().int().positive().optional(),
     ativo: z.boolean().optional(), // Para reativar um usuário
   }),
+});
+
+// Schema para a QUERY de 'listar médicos'
+export const listMedicosSchema = z.object({
+  query: paginationSchema.merge(z.object({ // Combina com paginação
+    // Adicione filtros futuros aqui, ex:
+    // nome: z.string().optional(),
+    // crm: z.string().optional(),
+  })),
 });

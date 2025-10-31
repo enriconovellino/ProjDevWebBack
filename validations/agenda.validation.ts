@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 import { StatusSlot } from '@prisma/client';
+import { paginationSchema } from './pagination.validation.js'; // Importa
 
 // Regex para "HH:MM"
 const timeRegex = /^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/;
@@ -17,13 +18,13 @@ export const generateSlotsSchema = z.object({
   }),
 });
 
-// Schema para a QUERY de 'listar slots'
+// Schema para a QUERY de 'listar slots' (Atualizado)
 export const listAgendaSchema = z.object({
-  query: z.object({
-    medico_id: z.string().transform(Number).pipe(z.number().int().positive()), // Converte string para number
+  query: paginationSchema.merge(z.object({ // Combina com paginação
+    medico_id: z.string().transform(Number).pipe(z.number().int().positive()),
     data_inicio: z.string().datetime('Data de início inválida (ISO 8601)'),
     data_fim: z.string().datetime('Data de fim inválida (ISO 8601)'),
-  }),
+  })),
 });
 
 // Schema para o BODY de 'atualizar status' (bloquear/desbloquear)

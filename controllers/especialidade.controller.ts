@@ -34,16 +34,42 @@ export const createEspecialidade = async (req: Request, res: Response, next: Nex
  */
 export const listEspecialidades = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const especialidades = await prisma.especialidade.findMany({
-      where: {
-        ativo: true, // Lista apenas as ativas
-      },
-      orderBy: {
-        nome: 'asc',
+    const { page, limit, ativo } = req.query;
+    
+    // Calcula o skip e take para paginação
+    const skip = ((page as unknown as number) - 1) * (limit as unknown as number);
+    const take = limit as unknown as number;
+
+    // Define o filtro de ativo (se fornecido na query)
+    const whereCondition = ativo !== undefined
+      ? { ativo: ativo as unknown as boolean }
+      : { ativo: true }; // Padrão: retorna apenas ativas
+
+    // Busca paralela: total de registros e dados da página
+    const [totalItems, especialidades] = await Promise.all([
+      prisma.especialidade.count({ where: whereCondition }),
+      prisma.especialidade.findMany({
+        where: whereCondition,
+        orderBy: {
+          nome: 'asc',
+        },
+        skip,
+        take,
+      }),
+    ]);
+
+    // Calcula metadados de paginação
+    const totalPages = Math.ceil(totalItems / take);
+
+    return res.status(200).json({
+      data: especialidades,
+      metadata: {
+        totalItems,
+        totalPages,
+        currentPage: page,
+        itemsPerPage: take,
       },
     });
-
-    return res.status(200).json(especialidades);
   } catch (error) {
     next(error);
   }

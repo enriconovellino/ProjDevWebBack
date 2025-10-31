@@ -14,9 +14,9 @@ import {
 } from '../controllers/medico.controller.js';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 import { authorizationMiddleware } from '../middlewares/authorization.middleware.js';
-import { validationMiddleware } from '../middlewares/validation.middleware.js';
+import { validationMiddleware, queryValidationMiddleware } from '../middlewares/validation.middleware.js';
 // --- Importar novo schema ---
-import { createMedicoSchema, updateMedicoSchema } from '../validations/medico.validation.js';
+import { createMedicoSchema, updateMedicoSchema, listMedicosSchema } from '../validations/medico.validation.js';
 import { linkEspecialidadeSchema } from '../validations/especialidade.validation.js';
 
 const router = Router();
@@ -40,7 +40,12 @@ router.post(
  * @desc Lista todos os médicos ativos.
  * @access Privada (Qualquer usuário autenticado)
  */
-router.get('/', authMiddleware, listMedicos);
+router.get(
+  '/',
+  authMiddleware,
+  queryValidationMiddleware(listMedicosSchema.shape.query),
+  listMedicos
+);
 
 /**
  * @route GET /api/medicos/:id

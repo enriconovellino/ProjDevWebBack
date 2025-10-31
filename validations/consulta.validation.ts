@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 import { StatusConsulta } from '@prisma/client';
+import { paginationSchema } from './pagination.validation.js'; // Importa
 
 // Schema para o BODY de 'criar consulta' (agendamento)
 export const createConsultaSchema = z.object({
@@ -13,14 +14,16 @@ export const createConsultaSchema = z.object({
 
 // Schema para a QUERY de 'listar consultas'
 export const listConsultaSchema = z.object({
-  query: z.object({
-    // Filtros opcionais
-    medico_id: z.string().transform(Number).pipe(z.number().int().positive()).optional(),
-    paciente_id: z.string().transform(Number).pipe(z.number().int().positive()).optional(),
-    status: z.enum([StatusConsulta.AGENDADA, StatusConsulta.CANCELADA, StatusConsulta.REALIZADA]).optional(),
-    data_inicio: z.string().datetime('Data de início inválida (ISO 8601)').optional(),
-    data_fim: z.string().datetime('Data de fim inválida (ISO 8601)').optional(),
-  }),
+  query: paginationSchema.merge(
+    z.object({
+      // Filtros opcionais
+      medico_id: z.string().transform(Number).pipe(z.number().int().positive()).optional(),
+      paciente_id: z.string().transform(Number).pipe(z.number().int().positive()).optional(),
+      status: z.enum([StatusConsulta.AGENDADA, StatusConsulta.CANCELADA, StatusConsulta.REALIZADA]).optional(),
+      data_inicio: z.string().datetime('Data de início inválida (ISO 8601)').optional(),
+      data_fim: z.string().datetime('Data de fim inválida (ISO 8601)').optional(),
+    })
+  ),
 });
 
 // Schema para o BODY de 'atualizar status' (pelo Admin/Medico)

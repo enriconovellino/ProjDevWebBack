@@ -107,7 +107,11 @@ export const createConsulta = async (req: Request, res: Response, next: NextFunc
 export const listConsultas = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = req.user!;
-    const { medico_id, paciente_id, status, data_inicio, data_fim } = req.query as any;
+    const { page, limit, medico_id, paciente_id, status, data_inicio, data_fim } = req.query as any;
+
+    // Calcula o skip e take para paginação
+    const skip = ((page as number) - 1) * (limit as number);
+    const take = limit as number;
 
     const where: any = {
       status: status,
@@ -140,19 +144,36 @@ export const listConsultas = async (req: Request, res: Response, next: NextFunct
       where.medico_id = medico_id ? Number(medico_id) : undefined;
     }
 
-    const consultas = await prisma.consulta.findMany({
-      where,
-      include: {
-        agenda_slot: true,
-        medico: { include: { usuario: { select: { nome: true } } } },
-        paciente: { include: { usuario: { select: { nome: true } } } },
-      },
-      orderBy: {
-        agenda_slot: { inicio: 'asc' }
-      }
-    });
+    // Busca paralela: total de registros e dados da página
+    const [totalItems, consultas] = await Promise.all([
+      prisma.consulta.count({ where }),
+      prisma.consulta.findMany({
+        where,
+        include: {
+          agenda_slot: true,
+          medico: { include: { usuario: { select: { nome: true } } } },
+          paciente: { include: { usuario: { select: { nome: true } } } },
+        },
+        orderBy: {
+          agenda_slot: { inicio: 'asc' }
+        },
+        skip,
+        take,
+      }),
+    ]);
 
-    return res.status(200).json(consultas);
+    // Calcula metadados de paginação
+    const totalPages = Math.ceil(totalItems / take);
+
+    return res.status(200).json({
+      data: consultas,
+      metadata: {
+        totalItems,
+        totalPages,
+        currentPage: page,
+        itemsPerPage: take,
+      },
+    });
   } catch (error) {
     next(error);
   }

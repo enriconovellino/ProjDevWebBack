@@ -35,6 +35,12 @@ export const errorHandlerMiddleware = (
         campo: campo,
       });
     }
+
+    if (err.code === 'P2025') { // Record not found (update/delete)
+      return res.status(404).json({
+        message: 'Registro não encontrado.',
+      });
+    }
   }
 
   // Erros genéricos

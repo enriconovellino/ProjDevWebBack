@@ -1,6 +1,7 @@
 // Conteúdo para: validations/paciente.validation.ts
 
 import { z } from 'zod';
+import { paginationSchema } from './pagination.validation.js'; // Importa
 
 // Schema para o corpo (body) da requisição de ATUALIZAÇÃO de paciente
 // Todos os campos são opcionais
@@ -15,4 +16,9 @@ export const updatePacienteSchema = z.object({
     data_nascimento: z.string().datetime().optional(),
     ativo: z.boolean().optional(), // Para Admin reativar
   }),
+});
+
+// Schema para a QUERY de 'listar pacientes'
+export const listPacientesSchema = z.object({
+  query: paginationSchema, // Por enquanto, só paginação
 });

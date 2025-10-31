@@ -5,8 +5,8 @@ import { Perfil } from '@prisma/client';
 import { listPacientes, getPacienteById, updatePaciente, deletePaciente } from '../controllers/paciente.controller.js';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 import { authorizationMiddleware } from '../middlewares/authorization.middleware.js';
-import { validationMiddleware } from '../middlewares/validation.middleware.js';
-import { updatePacienteSchema } from '../validations/paciente.validation.js';
+import { validationMiddleware, queryValidationMiddleware } from '../middlewares/validation.middleware.js';
+import { updatePacienteSchema, listPacientesSchema } from '../validations/paciente.validation.js';
 
 const router = Router();
 const adminOnly = authorizationMiddleware([Perfil.ADMIN]);
@@ -19,7 +19,12 @@ router.use(authMiddleware);
  * @desc Lista todos os pacientes ativos.
  * @access Privada (Admin)
  */
-router.get('/', adminOnly, listPacientes);
+router.get(
+  '/',
+  adminOnly,
+  queryValidationMiddleware(listPacientesSchema.shape.query),
+  listPacientes
+);
 
 /**
  * @route GET /api/pacientes/:id

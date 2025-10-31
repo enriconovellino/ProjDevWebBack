@@ -91,38 +91,61 @@ export const createAgendaSlots = async (req: Request, res: Response, next: NextF
 export const listAgendaSlots = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Os dados foram validados e transformados pelo queryValidationMiddleware
-    const { medico_id, data_inicio, data_fim } = req.query as any;
+    const { page, limit, medico_id, data_inicio, data_fim } = req.query as any;
 
-    const slots = await prisma.agendaSlot.findMany({
-      where: {
-        medico_id: medico_id,
-        inicio: {
-          gte: new Date(data_inicio), // Maior ou igual (>=)
-        },
-        fim: {
-          lte: new Date(data_fim), // Menor ou igual (<=)
-        },
+    // Calcula o skip e take para paginação
+    const skip = ((page as number) - 1) * (limit as number);
+    const take = limit as number;
+
+    const whereCondition: any = {
+      medico_id: medico_id,
+      inicio: {
+        gte: new Date(data_inicio), // Maior ou igual (>=)
       },
-      include: {
-        // (Fase 11) Inclui a consulta se o slot estiver 'OCUPADO'
-        consulta: { 
-          include: {
-            paciente: {
-              include: {
-                usuario: {
-                  select: { nome: true }
+      fim: {
+        lte: new Date(data_fim), // Menor ou igual (<=)
+      },
+    };
+
+    // Busca paralela: total de registros e dados da página
+    const [totalItems, slots] = await Promise.all([
+      prisma.agendaSlot.count({ where: whereCondition }),
+      prisma.agendaSlot.findMany({
+        where: whereCondition,
+        include: {
+          // (Fase 11) Inclui a consulta se o slot estiver 'OCUPADO'
+          consulta: { 
+            include: {
+              paciente: {
+                include: {
+                  usuario: {
+                    select: { nome: true }
+                  }
                 }
               }
             }
           }
-        }
-      },
-      orderBy: {
-        inicio: 'asc',
+        },
+        orderBy: {
+          inicio: 'asc',
+        },
+        skip,
+        take,
+      }),
+    ]);
+
+    // Calcula metadados de paginação
+    const totalPages = Math.ceil(totalItems / take);
+
+    return res.status(200).json({
+      data: slots,
+      metadata: {
+        totalItems,
+        totalPages,
+        currentPage: page,
+        itemsPerPage: take,
       },
     });
-
-    return res.status(200).json(slots);
   } catch (error) {
     next(error);
   }

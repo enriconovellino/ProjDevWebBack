@@ -5,8 +5,8 @@ import { Perfil } from '@prisma/client';
 import { createEspecialidade, listEspecialidades, updateEspecialidade } from '../controllers/especialidade.controller.js';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 import { authorizationMiddleware } from '../middlewares/authorization.middleware.js';
-import { validationMiddleware } from '../middlewares/validation.middleware.js';
-import { createEspecialidadeSchema, updateEspecialidadeSchema } from '../validations/especialidade.validation.js';
+import { validationMiddleware, queryValidationMiddleware } from '../middlewares/validation.middleware.js';
+import { createEspecialidadeSchema, updateEspecialidadeSchema, listEspecialidadesSchema } from '../validations/especialidade.validation.js';
 
 const router = Router();
 const adminOnly = authorizationMiddleware([Perfil.ADMIN]);
@@ -29,7 +29,12 @@ router.post(
  * @desc Lista todas as especialidades ativas.
  * @access Privada (Qualquer usuário autenticado)
  */
-router.get('/', authMiddleware, listEspecialidades);
+router.get(
+  '/',
+  authMiddleware,
+  queryValidationMiddleware(listEspecialidadesSchema.shape.query),
+  listEspecialidades
+);
 
 /**
  * @route PUT /api/especialidades/:id
