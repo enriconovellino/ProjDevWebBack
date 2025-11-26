@@ -47,8 +47,11 @@ app.use('/api', mainRouter);
 // Middleware de tratamento de erros global
 app.use(errorHandlerMiddleware);
 
-// Inicia o servidor
-app.listen(PORT, () => {
-  // Substituímos console.log pelo logger
-  logger.info(`🚀 Servidor rodando na porta http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    logger.info(`🚀 Servidor rodando na porta http://localhost:${PORT}`);
+  });
+}
+
+// Exportar o app para o Vercel funcionar
+export default app;
